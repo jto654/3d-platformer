@@ -1,7 +1,7 @@
 import { useKeyboardControls, PerspectiveCamera } from '@react-three/drei'
 import { useFrame, useThree } from '@react-three/fiber'
 import { RigidBody, CapsuleCollider, useRapier } from '@react-three/rapier'
-import { useRef, useState, useEffect } from 'react'
+import { useRef, useState, useEffect, forwardRef, useImperativeHandle } from 'react'
 import * as THREE from 'three'
 import { useGameStore } from '../../stores/useGameStore'
 import { Controls } from '../../App'
@@ -13,8 +13,15 @@ const JUMP_FORCE = 5
 const CAMERA_DISTANCE = 5
 const CAMERA_HEIGHT = 2
 
-export function Character() {
+export const Character = forwardRef((props, ref) => {
     const rigidBody = useRef()
+    // Expose position to parent via ref
+    useImperativeHandle(ref, () => ({
+        get x() { return rigidBody.current ? rigidBody.current.translation().x : 0 },
+        get y() { return rigidBody.current ? rigidBody.current.translation().y : 0 },
+        get z() { return rigidBody.current ? rigidBody.current.translation().z : 0 }
+    }))
+
     const characterRef = useRef()
     const [animationOffset] = useState(() => Math.random() * 100)
     const [subscribeKeys, getKeys] = useKeyboardControls()
@@ -191,4 +198,4 @@ export function Character() {
             </RigidBody>
         </group>
     )
-}
+})

@@ -1,7 +1,7 @@
 import { Canvas } from '@react-three/fiber'
 import { Physics } from '@react-three/rapier'
 import { KeyboardControls, OrbitControls } from '@react-three/drei'
-import { Suspense, useMemo } from 'react'
+import { Suspense, useMemo, useRef } from 'react'
 import { Character } from './components/3d/Character'
 import { World } from './components/3d/World'
 import { useGameStore } from './stores/useGameStore'
@@ -20,12 +20,13 @@ export const Controls = {
 
 function Scene() {
   const mouseLookEnabled = useGameStore((state) => state.mouseLookEnabled)
+  const characterRef = useRef()
 
   return (
     <>
       <Physics debug>
-        <World />
-        <Character />
+        <World playerPosition={characterRef} />
+        <Character ref={characterRef} />
       </Physics>
 
       <ambientLight intensity={0.4} />

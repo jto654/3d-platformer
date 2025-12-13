@@ -5,6 +5,7 @@ import { Suspense, useMemo, useRef } from 'react'
 import { Character } from './components/3d/Character'
 import { World } from './components/3d/World'
 import { useGameStore } from './stores/useGameStore'
+import { getSafeSpawnPosition } from './utils/terrain'
 
 export const Controls = {
   forward: 'forward',
@@ -22,11 +23,14 @@ function Scene() {
   const mouseLookEnabled = useGameStore((state) => state.mouseLookEnabled)
   const characterRef = useRef()
 
+  // Calculate safe spawn once
+  const spawnPos = useMemo(() => getSafeSpawnPosition(), [])
+
   return (
     <>
       <Physics debug>
         <World playerPosition={characterRef} />
-        <Character ref={characterRef} />
+        <Character ref={characterRef} initialPos={spawnPos} />
       </Physics>
 
       <ambientLight intensity={0.4} />

@@ -160,7 +160,7 @@ export const Character = forwardRef((props, ref) => {
 
     return (
         <group>
-            <RigidBody ref={rigidBody} colliders={false} enabledRotations={[false, false, false]} position={[0, 5, 0]}>
+            <RigidBody ref={rigidBody} colliders={false} enabledRotations={[false, false, false]} position={props.initialPos || [0, 5, 0]}>
                 <CapsuleCollider args={[0.75, 0.5]} position={[0, 1.25, 0]} />
                 {/* Visual Character */}
                 <group ref={characterRef}>

@@ -22,9 +22,8 @@ function Tree({ position }) {
     )
 }
 
-export function Chunk({ chunkX, chunkZ, size }) {
+export function Chunk({ chunkX, chunkZ, size, segments = 32 }) {
     const { geometry, treePositions } = useMemo(() => {
-        const segments = 32 // Reasonable resolution per chunk
         const geo = new THREE.PlaneGeometry(size, size, segments, segments)
 
         // Offset standard PlaneGeometry to start from top-left logic or just center?
@@ -89,25 +88,13 @@ export function Chunk({ chunkX, chunkZ, size }) {
 
                 if (hash > 0.985) { // 1.5% chance per vertex
                     trees.push([worldX, h, worldZ]) // Store World position
-                    // Wait, we need local position for the chunk group?
-                    // Chunk is positioned at [chunkX*size, 0, chunkZ*size].
-                    // So tree local pos: x = vertex.x, z = -vertex.y (from plane) -> -vertex.y is usually Z in 3D...
-                    // Let's verify Chunk rotation.
-                    // Chunk mesh is rotated [-PI/2, 0, 0].
-                    // So Local Y becomes World Z. Local Z becomes World Y.
-                    // We want Tree to be upright.
-                    // It's easier to put Trees outside the rotated mesh, simply added to the Chunk group.
-                    // The Chunk Group is at (CX*S, 0, CZ*S).
-                    // Tree Local X = worldX - (chunkX*size) = vertex.x
-                    // Tree Local Z = worldZ - (chunkZ*size) = -vertex.y
-                    // Tree Local Y = h
                 }
             }
         }
 
         geo.computeVertexNormals()
         return { geometry: geo, treePositions: trees }
-    }, [chunkX, chunkZ, size])
+    }, [chunkX, chunkZ, size, segments])
 
     return (
         <group>

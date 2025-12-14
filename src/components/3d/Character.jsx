@@ -1,10 +1,68 @@
 import { useKeyboardControls, PerspectiveCamera } from '@react-three/drei'
 import { useFrame, useThree } from '@react-three/fiber'
 import { RigidBody, CapsuleCollider, useRapier } from '@react-three/rapier'
-import { useRef, useState, useEffect, forwardRef, useImperativeHandle } from 'react'
+import { useRef, useState, useEffect, forwardRef, useImperativeHandle, Suspense, Component } from 'react'
 import * as THREE from 'three'
 import { useGameStore } from '../../stores/useGameStore'
 import { Controls } from '../../App'
+import { Samurai } from './Samurai'
+
+const USE_3D_MODEL = true
+
+// Simple Error Boundary to catch 3D model failures
+class ErrorBoundary extends Component {
+    constructor(props) {
+        super(props)
+        this.state = { hasError: false }
+    }
+    static getDerivedStateFromError(error) {
+        return { hasError: true }
+    }
+    componentDidCatch(error, errorInfo) {
+        console.error("Samurai Model Error:", error, errorInfo)
+    }
+    render() {
+        if (this.state.hasError) {
+            return this.props.fallback
+        }
+        return this.props.children
+    }
+}
+
+const BoxCharacter = () => (
+    <>
+        {/* Head */}
+        <mesh position={[0, 2.3, 0]} castShadow>
+            <boxGeometry args={[0.8, 0.8, 0.8]} />
+            <meshStandardMaterial color="orange" />
+        </mesh>
+        {/* Body */}
+        <mesh position={[0, 1.4, 0]} castShadow>
+            <boxGeometry args={[1, 1.2, 0.6]} />
+            <meshStandardMaterial color="hotpink" />
+        </mesh>
+        {/* Left Arm */}
+        <mesh name="leftArm" position={[0.7, 1.4, 0]} castShadow>
+            <boxGeometry args={[0.4, 1, 0.4]} />
+            <meshStandardMaterial color="hotpink" />
+        </mesh>
+        {/* Right Arm */}
+        <mesh name="rightArm" position={[-0.7, 1.4, 0]} castShadow>
+            <boxGeometry args={[0.4, 1, 0.4]} />
+            <meshStandardMaterial color="hotpink" />
+        </mesh>
+        {/* Left Leg */}
+        <mesh name="leftLeg" position={[0.3, 0.4, 0]} castShadow>
+            <boxGeometry args={[0.4, 1, 0.4]} />
+            <meshStandardMaterial color="blue" />
+        </mesh>
+        {/* Right Leg */}
+        <mesh name="rightLeg" position={[-0.3, 0.4, 0]} castShadow>
+            <boxGeometry args={[0.4, 1, 0.4]} />
+            <meshStandardMaterial color="blue" />
+        </mesh>
+    </>
+)
 
 const MOVEMENT_SPEED = 5
 const RUN_SPEED = 10
@@ -31,6 +89,17 @@ export const Character = forwardRef((props, ref) => {
     const mouseLookEnabled = useGameStore((state) => state.mouseLookEnabled)
     const toggleMouseLook = useGameStore((state) => state.toggleMouseLook)
 
+    // Reactive keys for animation triggers (causes re-render)
+    const forward = useKeyboardControls((state) => state.forward)
+    const back = useKeyboardControls((state) => state.back)
+    const left = useKeyboardControls((state) => state.left)
+    const right = useKeyboardControls((state) => state.right)
+    const jump = useKeyboardControls((state) => state.jump)
+    const run = useKeyboardControls((state) => state.run)
+
+    const isMoving = forward || back || left || right
+    const isRunning = run
+
     // Toggle Mouse Look
     useEffect(() => {
         const unsub = subscribeKeys(
@@ -50,7 +119,8 @@ export const Character = forwardRef((props, ref) => {
     const rotationY = useRef(0)
 
     useFrame((state, delta) => {
-        const { forward, back, left, right, jump, run, rotateLeft, rotateRight } = getKeys()
+        const keys = getKeys()
+        const { forward, back, left, right, jump, run, rotateLeft, rotateRight } = keys
         const rb = rigidBody.current
         if (!rb) return
 
@@ -136,13 +206,14 @@ export const Character = forwardRef((props, ref) => {
 
         // Animation Logic
         const time = state.clock.getElapsedTime()
-        const isMoving = forward || back || left || right
-        const isRunning = run
+        // Variables for Box Character Animation (internal to useFrame)
+        const isMovingFrame = keys.forward || keys.back || keys.left || keys.right
+        const isRunningFrame = keys.run
 
         // Limb rotation (simple sine wave)
         if (characterRef.current) {
-            const speed = isRunning ? 15 : 10
-            const amp = isMoving ? (isRunning ? 1 : 0.5) : 0
+            const speed = isRunningFrame ? 15 : 10
+            const amp = isMovingFrame ? (isRunningFrame ? 1 : 0.5) : 0
             const angle = Math.sin(time * speed + animationOffset) * amp
 
             // Arms
@@ -163,37 +234,22 @@ export const Character = forwardRef((props, ref) => {
             <RigidBody ref={rigidBody} colliders={false} enabledRotations={[false, false, false]} position={props.initialPos || [0, 5, 0]}>
                 <CapsuleCollider args={[0.75, 0.5]} position={[0, 1.25, 0]} />
                 {/* Visual Character */}
+                {/* Visual Character */}
                 <group ref={characterRef}>
-                    {/* Head */}
-                    <mesh position={[0, 2.3, 0]} castShadow>
-                        <boxGeometry args={[0.8, 0.8, 0.8]} />
-                        <meshStandardMaterial color="orange" />
-                    </mesh>
-                    {/* Body */}
-                    <mesh position={[0, 1.4, 0]} castShadow>
-                        <boxGeometry args={[1, 1.2, 0.6]} />
-                        <meshStandardMaterial color="hotpink" />
-                    </mesh>
-                    {/* Left Arm */}
-                    <mesh name="leftArm" position={[0.7, 1.4, 0]} castShadow>
-                        <boxGeometry args={[0.4, 1, 0.4]} />
-                        <meshStandardMaterial color="hotpink" />
-                    </mesh>
-                    {/* Right Arm */}
-                    <mesh name="rightArm" position={[-0.7, 1.4, 0]} castShadow>
-                        <boxGeometry args={[0.4, 1, 0.4]} />
-                        <meshStandardMaterial color="hotpink" />
-                    </mesh>
-                    {/* Left Leg */}
-                    <mesh name="leftLeg" position={[0.3, 0.4, 0]} castShadow>
-                        <boxGeometry args={[0.4, 1, 0.4]} />
-                        <meshStandardMaterial color="blue" />
-                    </mesh>
-                    {/* Right Leg */}
-                    <mesh name="rightLeg" position={[-0.3, 0.4, 0]} castShadow>
-                        <boxGeometry args={[0.4, 1, 0.4]} />
-                        <meshStandardMaterial color="blue" />
-                    </mesh>
+                    {USE_3D_MODEL ? (
+                        <ErrorBoundary fallback={<BoxCharacter />}>
+                            <Suspense fallback={null}>
+                                <Samurai
+                                    animation={isRunning ? 'Run' : isMoving ? 'Walk' : jump ? 'Jump' : 'Idle'}
+                                    position={[0, 1.35, 0]}
+                                    rotation={[0, Math.PI, 0]}
+                                    scale={1.2}
+                                />
+                            </Suspense>
+                        </ErrorBoundary>
+                    ) : (
+                        <BoxCharacter />
+                    )}
                 </group>
             </RigidBody>
         </group>

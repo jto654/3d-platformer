@@ -241,9 +241,9 @@ export const Character = forwardRef((props, ref) => {
                             <Suspense fallback={null}>
                                 <Samurai
                                     animation={isRunning ? 'Run' : isMoving ? 'Walk' : jump ? 'Jump' : 'Idle'}
-                                    position={[0, 1.35, 0]}
+                                    position={[0, 0.1, 0]}
                                     rotation={[0, Math.PI, 0]}
-                                    scale={1.2}
+                                    scale={1.0}
                                 />
                             </Suspense>
                         </ErrorBoundary>
